@@ -1,0 +1,17 @@
+{
+  "name": "calculadora-teletrabajo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:web": "node scripts/build-web.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.0.20",
+    "tailwindcss": "^3.4.10"
+  }
+}
