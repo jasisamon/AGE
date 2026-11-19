@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora de Teletrabajo</title>
+    
+    <!-- Metatags PWA para instalación en pantalla de inicio (iOS y Android) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Teletrabajo">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+    
+    <!-- Icono SVG embebido en Data URI para pantalla de inicio -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234f46e5'/%3E%3Cpath d='M25 65h50v6H25zm5-35h40v28H30zm6 6v16h28V36z' fill='%23ffffff'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234f46e5'/%3E%3Cpath d='M25 65h50v6H25zm5-35h40v28H30zm6 6v16h28V36z' fill='%23ffffff'/%3E%3C/svg%3E">
+
+    <!-- Tailwind + fuente Inter compilados en local (funciona sin conexión) -->
+    <link rel="stylesheet" href="app.css">
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+        }
+        /* Ocultar flechas de inputs numéricos en algunos navegadores para estética más limpia */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+        }
+        .tab-active {
+            background-color: #ffffff;
+            color: #4f46e5;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .tab-inactive {
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-36 select-none">
+
+    <!-- Barra Superior Estilo App Nativa -->
+    <header class="sticky top-0 z-30 bg-indigo-600 text-white shadow-md">
+        <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="bg-white/20 p-2 rounded-xl">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-tight tracking-tight">Calculadora Teletrabajo</h1>
+                    <p class="text-xs text-indigo-200 font-medium">Gestión de jornada híbrida</p>
+                </div>
+            </div>
+            <button id="btnToggleParams" onclick="toggleParametros()" class="flex items-center space-x-1 bg-indigo-700 hover:bg-indigo-800 active:scale-95 transition px-3 py-2 rounded-xl text-xs font-semibold shadow-inner">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Ajustes</span>
+            </button>
+        </div>
+
+        <!-- Panel Colapsable de Parámetros de Jornada -->
+        <div id="panelParametros" class="bg-indigo-800/95 border-t border-indigo-500/30 transition-all duration-300 overflow-hidden">
+            <div class="max-w-3xl mx-auto px-4 py-3.5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-200">1. Parámetros de Jornada</span>
+                    <span id="badgeResumenParams" class="text-xs bg-indigo-900/80 text-indigo-200 px-2.5 py-0.5 rounded-full font-medium">7h/día · 60% Tele · 40% Pres</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2.5">
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                        <label for="paramHorasDiarias" class="block text-[11px] text-indigo-200 font-medium mb-1">Horas diarias</label>
+                        <input type="number" id="paramHorasDiarias" step="0.25" min="1" max="24" value="7" oninput="recalcularTodo()" class="w-full bg-white text-slate-900 font-bold text-base rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                        <label for="paramPctTele" class="block text-[11px] text-indigo-200 font-medium mb-1">% Teletrabajo</label>
+                        <input type="number" id="paramPctTele" step="1" min="0" max="100" value="60" oninput="recalcularTodo()" class="w-full bg-white text-indigo-700 font-bold text-base rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                        <label class="block text-[11px] text-emerald-200 font-medium mb-1">% Presencial</label>
+                        <div id="paramPctPresDisplay" class="w-full bg-emerald-950/50 text-emerald-300 font-bold text-base rounded-lg px-2.5 py-1.5 border border-emerald-500/30">
+                            40%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal -->
+    <main class="max-w-3xl mx-auto px-4 pt-4 space-y-5">
+
+        <!-- Selector de Navegación (Tabs estilo iOS/Android) -->
+        <div class="bg-slate-200/80 p-1 rounded-2xl grid grid-cols-2 gap-1">
+            <button id="tabBtnMensual" onclick="cambiarVista('mensual')" class="tab-active py-2.5 px-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center space-x-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>Planificación Anual</span>
+            </button>
+            <button id="tabBtnRapido" onclick="cambiarVista('rapido')" class="tab-inactive py-2.5 px-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center space-x-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Cálculo Rápido</span>
+            </button>
+        </div>
+
+        <!-- VISTA 1: CÁLCULO RÁPIDO -->
+        <section id="vistaRapido" class="hidden space-y-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">2. Cálculo Rápido</h2>
+                        <p class="text-xs text-slate-500">Calcula al instante cualquier bloque de días efectivos</p>
+                    </div>
+                    <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-2.5 py-1 rounded-lg">Express</span>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/70 mb-4">
+                    <label for="inputDiasRapido" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                        Días L-V Efectivos
+                    </label>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="ajustarDiasRapido(-1)" class="w-12 h-12 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold text-xl shadow-sm active:bg-slate-100 flex items-center justify-center">-</button>
+                        <input type="number" id="inputDiasRapido" min="0" step="0.5" value="21" oninput="calcularRapido()" class="flex-1 text-center bg-white border border-slate-300 rounded-xl py-2.5 text-2xl font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="ajustarDiasRapido(1)" class="w-12 h-12 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold text-xl shadow-sm active:bg-slate-100 flex items-center justify-center">+</button>
+                    </div>
+                </div>
+
+                <!-- Resultados Cálculo Rápido -->
+                <div class="space-y-3">
+                    <!-- Total Horas -->
+                    <div class="bg-slate-100/80 rounded-xl p-3.5 flex items-center justify-between border border-slate-200/60">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-500 block">Total Horas Jornada</span>
+                            <span id="rapidoTotalDec" class="text-xs text-slate-400 font-medium">147,00 h decimales</span>
+                        </div>
+                        <span id="rapidoTotalHm" class="text-xl font-extrabold text-slate-800">147h 00m</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Teletrabajo -->
+                        <div class="bg-indigo-50/90 rounded-xl p-4 border border-indigo-200/80">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Teletrabajo</span>
+                                <span id="rapidoLabelPctTele" class="text-xs font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-md">60%</span>
+                            </div>
+                            <div id="rapidoTeleHm" class="text-2xl font-extrabold text-indigo-950 my-1">88h 12m</div>
+                            <div class="flex items-center justify-between text-xs text-indigo-700 font-medium pt-1 border-t border-indigo-200/60">
+                                <span>Decimal: <strong id="rapidoTeleDec">88,20 h</strong></span>
+                                <span>Equiv: <strong id="rapidoTeleDias">12,6 d</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Presencial -->
+                        <div class="bg-emerald-50/90 rounded-xl p-4 border border-emerald-200/80">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Presencial</span>
+                                <span id="rapidoLabelPctPres" class="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md">40%</span>
+                            </div>
+                            <div id="rapidoPresHm" class="text-2xl font-extrabold text-emerald-950 my-1">58h 48m</div>
+                            <div class="flex items-center justify-between text-xs text-emerald-700 font-medium pt-1 border-t border-emerald-200/60">
+                                <span>Decimal: <strong id="rapidoPresDec">58,80 h</strong></span>
+                                <span>Equiv: <strong id="rapidoPresDias">8,4 d</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 2: PLANIFICACIÓN MENSUAL -->
+        <section id="vistaMensual" class="space-y-4">
+            <div class="flex items-center justify-between px-1">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">3. Planificación Mensual</h2>
+                    <p class="text-xs text-slate-500">Introduce días laborables y festivos/vacaciones</p>
+                </div>
+                <button onclick="cargarEjemploAnual()" class="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 active:scale-95 transition px-3 py-1.5 rounded-xl border border-indigo-200/70">
+                    Rellenar ejemplo
+                </button>
+            </div>
+
+            <!-- Contenedor de Tarjetas de los 12 Meses -->
+            <div id="contenedorMeses" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <!-- Generado dinámicamente con JS -->
+            </div>
+
+            <!-- Botones de Acción Inferiores -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-2.5">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="guardarDatos(true)" class="flex items-center justify-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition text-white font-bold text-sm py-3 px-4 rounded-xl shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                        </svg>
+                        <span>Guardar datos</span>
+                    </button>
+                    <button onclick="exportarResumen()" class="flex items-center justify-center space-x-1.5 bg-slate-800 hover:bg-slate-900 active:scale-95 transition text-white font-bold text-sm py-3 px-4 rounded-xl shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                        </svg>
+                        <span>Exportar resumen</span>
+                    </button>
+                </div>
+                <button onclick="solicitarLimpiarTodo()" class="w-full flex items-center justify-center space-x-1.5 bg-rose-50 hover:bg-rose-100 active:scale-95 transition text-rose-600 font-semibold text-xs py-2.5 px-4 rounded-xl border border-rose-200/70">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Limpiar todo</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Barra Inferior Fija: TOTAL ACUMULADO ANUAL -->
+    <footer class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div class="max-w-3xl mx-auto px-4 py-2.5">
+            <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">Total Acumulado Anual</span>
+                </div>
+                <button onclick="abrirModalDetalleAnual()" class="text-[11px] font-bold text-indigo-600 hover:underline flex items-center">
+                    <span>Ver desglose</span>
+                    <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <!-- Días y Total Horas -->
+                <div class="bg-slate-100 rounded-xl px-2.5 py-1.5 border border-slate-200/80">
+                    <div class="text-[10px] text-slate-500 font-semibold truncate">Efectivos: <strong id="anualDiasEfec" class="text-slate-800">0</strong> d</div>
+                    <div id="anualTotalHm" class="text-sm font-extrabold text-slate-900 leading-tight">0h 00m</div>
+                </div>
+
+                <!-- Teletrabajo -->
+                <div class="bg-indigo-50 rounded-xl px-2.5 py-1.5 border border-indigo-200/80">
+                    <div class="flex items-center justify-between text-[10px] text-indigo-700 font-bold">
+                        <span>Teletrabajo</span>
+                        <span id="anualTeleDias">0,0d</span>
+                    </div>
+                    <div id="anualTeleHm" class="text-sm font-extrabold text-indigo-900 leading-tight">0h 00m</div>
+                </div>
+
+                <!-- Presencial -->
+                <div class="bg-emerald-50 rounded-xl px-2.5 py-1.5 border border-emerald-200/80">
+                    <div class="flex items-center justify-between text-[10px] text-emerald-700 font-bold">
+                        <span>Presencial</span>
+                        <span id="anualPresDec">0,0h</span>
+                    </div>
+                    <div id="anualPresHm" class="text-sm font-extrabold text-emerald-900 leading-tight">0h 00m</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Detalle Completo Anual -->
+    <div id="modalDetalleAnual" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-extrabold text-slate-900">Resumen Acumulado Anual</h3>
+                <button onclick="cerrarModalDetalleAnual()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                    <span class="block text-[11px] text-slate-500 font-medium">Días L-V</span>
+                    <strong id="modalDiasLV" class="text-lg font-extrabold text-slate-800">0</strong>
+                </div>
+                <div class="bg-rose-50/70 p-2.5 rounded-xl border border-rose-200/70">
+                    <span class="block text-[11px] text-rose-600 font-medium">Festivos/Bajas</span>
+                    <strong id="modalFestivos" class="text-lg font-extrabold text-rose-700">0</strong>
+                </div>
+                <div class="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-200/70">
+                    <span class="block text-[11px] text-indigo-600 font-medium">Días Efectivos</span>
+                    <strong id="modalDiasEfec" class="text-lg font-extrabold text-indigo-800">0</strong>
+                </div>
+            </div>
+
+            <div class="bg-slate-100 p-3.5 rounded-2xl flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-700">Total Horas Anuales</span>
+                <div class="text-right">
+                    <div id="modalTotalHm" class="text-lg font-extrabold text-slate-900">0h 00m</div>
+                    <div id="modalTotalDec" class="text-xs text-slate-500 font-medium">0,00 h decimales</div>
+                </div>
+            </div>
+
+            <div class="space-y-2.5">
+                <div class="bg-indigo-50 p-3.5 rounded-2xl border border-indigo-200/80 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-indigo-700 block">Teletrabajo (<span id="modalPctTele">60</span>%)</span>
+                        <span class="text-xs text-indigo-600 font-medium">Días equiv.: <strong id="modalTeleDias">0,00</strong> días</span>
+                    </div>
+                    <div class="text-right">
+                        <div id="modalTeleHm" class="text-lg font-extrabold text-indigo-950">0h 00m</div>
+                        <div id="modalTeleDec" class="text-xs text-indigo-700 font-semibold">0,00 h</div>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200/80 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-emerald-700 block">Presencial (<span id="modalPctPres">40</span>%)</span>
+                        <span class="text-xs text-emerald-600 font-medium">Días equiv.: <strong id="modalPresDias">0,00</strong> días</span>
+                    </div>
+                    <div class="text-right">
+                        <div id="modalPresHm" class="text-lg font-extrabold text-emerald-950">0h 00m</div>
+                        <div id="modalPresDec" class="text-xs text-emerald-700 font-semibold">0,00 h</div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="exportarResumen(); cerrarModalDetalleAnual();" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition">
+                Copiar resumen al portapapeles
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación Personalizado (Sin usar confirm() ni alert()) -->
+    <div id="modalConfirmar" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center space-x-3 text-rose-600">
+                <div class="bg-rose-100 p-2.5 rounded-full">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-extrabold text-slate-900">¿Limpiar todos los datos?</h3>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+                Se pondrán a cero todos los meses y se borrarán los datos guardados en este dispositivo.
+            </p>
+            <div class="grid grid-cols-2 gap-2.5 pt-2">
+                <button onclick="cerrarModalConfirmar()" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition">
+                    Cancelar
+                </button>
+                <button onclick="ejecutarLimpiarTodo()" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm shadow-sm transition">
+                    Sí, limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificación Flotante -->
+    <div id="toastNotificacion" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2">
+        <div class="bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center space-x-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span id="toastTexto">Acción completada</span>
+        </div>
+    </div>
+
+    <!-- Area de texto oculta para copia segura al portapapeles -->
+    <textarea id="clipboardHelper" class="sr-only" aria-hidden="true"></textarea>
+
+    <script>
+        // Constantes y Estado de la Aplicación
+        const MESES = [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
+        const STORAGE_KEY = "calculadora_teletrabajo_v1";
+
+        let estado = {
+            horasDiarias: 7,
+            pctTele: 60,
+            diasRapido: 21,
+            meses: MESES.map(() => ({ diasLV: 0, festivos: 0 }))
+        };
+
+        let panelParamsAbierto = true;
+
+        // Utilidades de Formato (replicando exactamente la lógica de Excel)
+        function formatearHorasMinutos(horasDecimales) {
+            const totalMinutos = Math.round(horasDecimales * 60);
+            const horas = Math.floor(totalMinutos / 60);
+            const minutos = totalMinutos % 60;
+            const minStr = minutos < 10 ? "0" + minutos : String(minutos);
+            return `${horas}h ${minStr}m`;
+        }
+
+        function formatearDecimal(valor, decimales = 2) {
+            return valor.toLocaleString("es-ES", {
+                minimumFractionDigits: decimales,
+                maximumFractionDigits: decimales
+            });
+        }
+
+        // Inicialización de Interfaz
+        function renderizarTarjetasMeses() {
+            const contenedor = document.getElementById("contenedorMeses");
+            contenedor.innerHTML = "";
+
+            MESES.forEach((nombreMes, idx) => {
+                const datosMes = estado.meses[idx];
+                const card = document.createElement("div");
+                card.className = "bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 transition-all hover:border-indigo-200";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 font-extrabold text-xs flex items-center justify-center">${idx + 1}</span>
+                            <h3 class="font-bold text-slate-800 text-sm">${nombreMes}</h3>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[11px] font-semibold text-slate-500">Efectivos: <strong id="mesEfec_${idx}" class="text-slate-900 font-extrabold">0</strong> d</span>
+                            <span class="mx-1 text-slate-300">·</span>
+                            <span id="mesTotalHm_${idx}" class="text-xs font-extrabold text-slate-700">0h 00m</span>
+                        </div>
+                    </div>
+
+                    <!-- Inputs del Mes -->
+                    <div class="grid grid-cols-2 gap-2.5 mb-3">
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200/70">
+                            <label for="diasLV_${idx}" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Días L-V</label>
+                            <input type="number" id="diasLV_${idx}" min="0" max="31" step="1" value="${datosMes.diasLV || ''}" placeholder="0"
+                                oninput="actualizarMes(${idx}, 'diasLV', this.value)"
+                                class="w-full bg-white border border-slate-300/80 rounded-lg px-2.5 py-1.5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200/70">
+                            <label for="festivos_${idx}" class="block text-[10px] font-bold uppercase tracking-wider text-rose-500 mb-1">Festivos / Bajas</label>
+                            <input type="number" id="festivos_${idx}" min="0" max="31" step="1" value="${datosMes.festivos || ''}" placeholder="0"
+                                oninput="actualizarMes(${idx}, 'festivos', this.value)"
+                                class="w-full bg-white border border-slate-300/80 rounded-lg px-2.5 py-1.5 text-sm font-bold text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
+                        </div>
+                    </div>
+
+                    <!-- Resultados del Mes -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- Teletrabajo -->
+                        <div class="bg-indigo-50/80 rounded-xl p-2.5 border border-indigo-100">
+                            <div class="flex items-center justify-between text-[10px] font-bold text-indigo-700 mb-0.5">
+                                <span>TELETRABAJO</span>
+                                <span id="mesTeleDias_${idx}" class="bg-indigo-100 px-1.5 py-0.2 rounded text-indigo-800">0,0 d</span>
+                            </div>
+                            <div id="mesTeleHm_${idx}" class="text-sm font-extrabold text-indigo-950">0h 00m</div>
+                            <div id="mesTeleDec_${idx}" class="text-[11px] text-indigo-600 font-medium">0,00 h</div>
+                        </div>
+
+                        <!-- Presencial -->
+                        <div class="bg-emerald-50/80 rounded-xl p-2.5 border border-emerald-100">
+                            <div class="flex items-center justify-between text-[10px] font-bold text-emerald-700 mb-0.5">
+                                <span>PRESENCIAL</span>
+                                <span id="mesPresDias_${idx}" class="bg-emerald-100 px-1.5 py-0.2 rounded text-emerald-800">0,0 d</span>
+                            </div>
+                            <div id="mesPresHm_${idx}" class="text-sm font-extrabold text-emerald-950">0h 00m</div>
+                            <div id="mesPresDec_${idx}" class="text-[11px] text-emerald-600 font-medium">0,00 h</div>
+                        </div>
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+        }
+
+        // Lógica de Cálculo Principal
+        function obtenerParametros() {
+            let horas = parseFloat(document.getElementById("paramHorasDiarias").value);
+            if (isNaN(horas) || horas < 0) horas = 0;
+
+            let pctTele = parseFloat(document.getElementById("paramPctTele").value);
+            if (isNaN(pctTele)) pctTele = 0;
+            if (pctTele < 0) pctTele = 0;
+            if (pctTele > 100) pctTele = 100;
+
+            const pctPres = 100 - pctTele;
+
+            estado.horasDiarias = horas;
+            estado.pctTele = pctTele;
+
+            // Actualizar UI de parámetros
+            document.getElementById("paramPctPresDisplay").textContent = `${formatearDecimal(pctPres, pctPres % 1 === 0 ? 0 : 1)}%`;
+            document.getElementById("badgeResumenParams").textContent = `${horas}h/día · ${pctTele}% Tele · ${pctPres}% Pres`;
+
+            return {
+                horasDiarias: horas,
+                ratioTele: pctTele / 100,
+                ratioPres: pctPres / 100,
+                pctTele,
+                pctPres
+            };
+        }
+
+        function calcularRapido() {
+            const params = obtenerParametros();
+            let dias = parseFloat(document.getElementById("inputDiasRapido").value);
+            if (isNaN(dias) || dias < 0) dias = 0;
+            estado.diasRapido = dias;
+
+            const totalHoras = dias * params.horasDiarias;
+            const horasTele = totalHoras * params.ratioTele;
+            const horasPres = totalHoras * params.ratioPres;
+            const diasEquivTele = dias * params.ratioTele;
+            const diasEquivPres = dias * params.ratioPres;
+
+            document.getElementById("rapidoTotalHm").textContent = formatearHorasMinutos(totalHoras);
+            document.getElementById("rapidoTotalDec").textContent = `${formatearDecimal(totalHoras)} h decimales`;
+
+            document.getElementById("rapidoLabelPctTele").textContent = `${params.pctTele}%`;
+            document.getElementById("rapidoTeleHm").textContent = formatearHorasMinutos(horasTele);
+            document.getElementById("rapidoTeleDec").textContent = `${formatearDecimal(horasTele)} h`;
+            document.getElementById("rapidoTeleDias").textContent = `${formatearDecimal(diasEquivTele, 1)} d`;
+
+            document.getElementById("rapidoLabelPctPres").textContent = `${params.pctPres}%`;
+            document.getElementById("rapidoPresHm").textContent = formatearHorasMinutos(horasPres);
+            document.getElementById("rapidoPresDec").textContent = `${formatearDecimal(horasPres)} h`;
+            document.getElementById("rapidoPresDias").textContent = `${formatearDecimal(diasEquivPres, 1)} d`;
+
+            guardarDatos(false);
+        }
+
+        function actualizarMes(indice, campo, valorStr) {
+            let val = parseFloat(valorStr);
+            if (isNaN(val) || val < 0) val = 0;
+            estado.meses[indice][campo] = val;
+            calcularAnual();
+            guardarDatos(false);
+        }
+
+        function calcularAnual() {
+            const params = obtenerParametros();
+
+            let sumDiasLV = 0;
+            let sumFestivos = 0;
+            let sumDiasEfec = 0;
+            let sumTotalHoras = 0;
+            let sumTeleHoras = 0;
+            let sumPresHoras = 0;
+            let sumTeleDias = 0;
+            let sumPresDias = 0;
+
+            estado.meses.forEach((m, idx) => {
+                const diasLV = m.diasLV || 0;
+                const festivos = m.festivos || 0;
+                const diasEfec = Math.max(0, diasLV - festivos);
+
+                const totalHoras = diasEfec * params.horasDiarias;
+                const teleHoras = totalHoras * params.ratioTele;
+                const presHoras = totalHoras * params.ratioPres;
+                const teleDias = diasEfec * params.ratioTele;
+                const presDias = diasEfec * params.ratioPres;
+
+                // Actualizar tarjeta del mes
+                document.getElementById(`mesEfec_${idx}`).textContent = diasEfec;
+                document.getElementById(`mesTotalHm_${idx}`).textContent = formatearHorasMinutos(totalHoras);
+
+                document.getElementById(`mesTeleHm_${idx}`).textContent = formatearHorasMinutos(teleHoras);
+                document.getElementById(`mesTeleDec_${idx}`).textContent = `${formatearDecimal(teleHoras)} h`;
+                document.getElementById(`mesTeleDias_${idx}`).textContent = `${formatearDecimal(teleDias, 1)} d`;
+
+                document.getElementById(`mesPresHm_${idx}`).textContent = formatearHorasMinutos(presHoras);
+                document.getElementById(`mesPresDec_${idx}`).textContent = `${formatearDecimal(presHoras)} h`;
+                document.getElementById(`mesPresDias_${idx}`).textContent = `${formatearDecimal(presDias, 1)} d`;
+
+                // Acumular totales anuales
+                sumDiasLV += diasLV;
+                sumFestivos += festivos;
+                sumDiasEfec += diasEfec;
+                sumTotalHoras += totalHoras;
+                sumTeleHoras += teleHoras;
+                sumPresHoras += presHoras;
+                sumTeleDias += teleDias;
+                sumPresDias += presDias;
+            });
+
+            // Actualizar barra inferior fija
+            document.getElementById("anualDiasEfec").textContent = sumDiasEfec;
+            document.getElementById("anualTotalHm").textContent = formatearHorasMinutos(sumTotalHoras);
+            document.getElementById("anualTeleHm").textContent = formatearHorasMinutos(sumTeleHoras);
+            document.getElementById("anualTeleDias").textContent = `${formatearDecimal(sumTeleDias, 1)}d`;
+            document.getElementById("anualPresHm").textContent = formatearHorasMinutos(sumPresHoras);
+            document.getElementById("anualPresDec").textContent = `${formatearDecimal(sumPresHoras, 1)}h`;
+
+            // Actualizar modal de desglose anual
+            document.getElementById("modalDiasLV").textContent = sumDiasLV;
+            document.getElementById("modalFestivos").textContent = sumFestivos;
+            document.getElementById("modalDiasEfec").textContent = sumDiasEfec;
+            document.getElementById("modalTotalHm").textContent = formatearHorasMinutos(sumTotalHoras);
+            document.getElementById("modalTotalDec").textContent = `${formatearDecimal(sumTotalHoras)} h decimales`;
+
+            document.getElementById("modalPctTele").textContent = params.pctTele;
+            document.getElementById("modalTeleHm").textContent = formatearHorasMinutos(sumTeleHoras);
+            document.getElementById("modalTeleDec").textContent = `${formatearDecimal(sumTeleHoras)} h`;
+            document.getElementById("modalTeleDias").textContent = formatearDecimal(sumTeleDias, 2);
+
+            document.getElementById("modalPctPres").textContent = params.pctPres;
+            document.getElementById("modalPresHm").textContent = formatearHorasMinutos(sumPresHoras);
+            document.getElementById("modalPresDec").textContent = `${formatearDecimal(sumPresHoras)} h`;
+            document.getElementById("modalPresDias").textContent = formatearDecimal(sumPresDias, 2);
+        }
+
+        function recalcularTodo() {
+            calcularRapido();
+            calcularAnual();
+        }
+
+        // Navegación y Controles UI
+        function cambiarVista(vista) {
+            const vistaMensual = document.getElementById("vistaMensual");
+            const vistaRapido = document.getElementById("vistaRapido");
+            const btnMensual = document.getElementById("tabBtnMensual");
+            const btnRapido = document.getElementById("tabBtnRapido");
+
+            if (vista === "mensual") {
+                vistaMensual.classList.remove("hidden");
+                vistaRapido.classList.add("hidden");
+                btnMensual.className = "tab-active py-2.5 px-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center space-x-1.5";
+                btnRapido.className = "tab-inactive py-2.5 px-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center space-x-1.5";
+            } else {
+                vistaMensual.classList.add("hidden");
+                vistaRapido.classList.remove("hidden");
+                btnRapido.className = "tab-active py-2.5 px-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center space-x-1.5";
+                btnMensual.className = "tab-inactive py-2.5 px-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center space-x-1.5";
+            }
+        }
+
+        function toggleParametros() {
+            const panel = document.getElementById("panelParametros");
+            panelParamsAbierto = !panelParamsAbierto;
+            if (panelParamsAbierto) {
+                panel.classList.remove("hidden");
+            } else {
+                panel.classList.add("hidden");
+            }
+        }
+
+        function ajustarDiasRapido(delta) {
+            const input = document.getElementById("inputDiasRapido");
+            let val = parseFloat(input.value) || 0;
+            val = Math.max(0, val + delta);
+            input.value = val;
+            calcularRapido();
+        }
+
+        // Persistencia con localStorage
+        function guardarDatos(notificar = true) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
+                if (notificar) {
+                    mostrarToast("Datos guardados en el dispositivo");
+                }
+            } catch (e) {
+                if (notificar) mostrarToast("No se pudo guardar localmente");
+            }
+        }
+
+        function cargarDatosGuardados() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.meses) && parsed.meses.length === 12) {
+                        estado = parsed;
+                        document.getElementById("paramHorasDiarias").value = estado.horasDiarias ?? 7;
+                        document.getElementById("paramPctTele").value = estado.pctTele ?? 60;
+                        document.getElementById("inputDiasRapido").value = estado.diasRapido ?? 21;
+                    }
+                }
+            } catch (e) {
+                // Ignorar error de lectura y usar valores por defecto
+            }
+        }
+
+        function cargarEjemploAnual() {
+            // Días laborables estándar aproximados por mes
+            const ejemploDiasLV = [22, 20, 22, 22, 21, 22, 23, 21, 22, 22, 21, 22];
+            const ejemploFestivos = [1, 0, 0, 2, 1, 0, 0, 5, 0, 1, 1, 2];
+
+            estado.meses = MESES.map((_, idx) => ({
+                diasLV: ejemploDiasLV[idx],
+                festivos: ejemploFestivos[idx]
+            }));
+
+            renderizarTarjetasMeses();
+            recalcularTodo();
+            guardarDatos(false);
+            mostrarToast("Datos de ejemplo cargados");
+        }
+
+        // Modales y Acciones
+        function solicitarLimpiarTodo() {
+            document.getElementById("modalConfirmar").classList.remove("hidden");
+        }
+
+        function cerrarModalConfirmar() {
+            document.getElementById("modalConfirmar").classList.add("hidden");
+        }
+
+        function ejecutarLimpiarTodo() {
+            estado.meses = MESES.map(() => ({ diasLV: 0, festivos: 0 }));
+            localStorage.removeItem(STORAGE_KEY);
+            renderizarTarjetasMeses();
+            recalcularTodo();
+            cerrarModalConfirmar();
+            mostrarToast("Todos los datos han sido borrados");
+        }
+
+        function abrirModalDetalleAnual() {
+            document.getElementById("modalDetalleAnual").classList.remove("hidden");
+        }
+
+        function cerrarModalDetalleAnual() {
+            document.getElementById("modalDetalleAnual").classList.add("hidden");
+        }
+
+        function exportarResumen() {
+            const params = obtenerParametros();
+            let sumDiasLV = 0, sumFestivos = 0, sumDiasEfec = 0;
+            let sumTotalHoras = 0, sumTeleHoras = 0, sumPresHoras = 0, sumTeleDias = 0;
+
+            let lineas = [
+                "📊 RESUMEN PLANIFICACIÓN TELETRABAJO",
+                `Jornada: ${params.horasDiarias}h/día | Teletrabajo: ${params.pctTele}% | Presencial: ${params.pctPres}%`,
+                "----------------------------------------"
+            ];
+
+            estado.meses.forEach((m, idx) => {
+                const diasEfec = Math.max(0, (m.diasLV || 0) - (m.festivos || 0));
+                const totalHoras = diasEfec * params.horasDiarias;
+                const teleHoras = totalHoras * params.ratioTele;
+                const presHoras = totalHoras * params.ratioPres;
+                const teleDias = diasEfec * params.ratioTele;
+
+                sumDiasLV += (m.diasLV || 0);
+                sumFestivos += (m.festivos || 0);
+                sumDiasEfec += diasEfec;
+                sumTotalHoras += totalHoras;
+                sumTeleHoras += teleHoras;
+                sumPresHoras += presHoras;
+                sumTeleDias += teleDias;
+
+                if (diasEfec > 0 || (m.diasLV || 0) > 0) {
+                    lineas.push(
+                        `• ${MESES[idx]}: ${diasEfec}d ef. | Total: ${formatearHorasMinutos(totalHoras)} | ` +
+                        `Tele: ${formatearHorasMinutos(teleHoras)} (${formatearDecimal(teleDias, 1)}d) | ` +
+                        `Pres: ${formatearHorasMinutos(presHoras)}`
+                    );
+                }
+            });
+
+            lineas.push("----------------------------------------");
+            lineas.push("🏆 TOTAL ACUMULADO ANUAL:");
+            lineas.push(`• Días L-V: ${sumDiasLV} | Festivos/Bajas: ${sumFestivos} | Efectivos: ${sumDiasEfec} días`);
+            lineas.push(`• Total Horas: ${formatearHorasMinutos(sumTotalHoras)} (${formatearDecimal(sumTotalHoras)} h)`);
+            lineas.push(`• Teletrabajo (${params.pctTele}%): ${formatearHorasMinutos(sumTeleHoras)} (${formatearDecimal(sumTeleHoras)} h · ${formatearDecimal(sumTeleDias, 2)} días equiv.)`);
+            lineas.push(`• Presencial (${params.pctPres}%): ${formatearHorasMinutos(sumPresHoras)} (${formatearDecimal(sumPresHoras)} h)`);
+
+            const textoFinal = lineas.join("\n");
+            const helper = document.getElementById("clipboardHelper");
+            helper.value = textoFinal;
+            helper.select();
+            helper.setSelectionRange(0, 99999);
+
+            try {
+                document.execCommand("copy");
+                mostrarToast("Resumen copiado al portapapeles");
+            } catch (err) {
+                mostrarToast("No se pudo copiar el resumen");
+            }
+        }
+
+        let toastTimer = null;
+        function mostrarToast(mensaje) {
+            const toast = document.getElementById("toastNotificacion");
+            document.getElementById("toastTexto").textContent = mensaje;
+            toast.classList.remove("opacity-0", "-translate-y-2");
+            toast.classList.add("opacity-100", "translate-y-0");
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove("opacity-100", "translate-y-0");
+                toast.classList.add("opacity-0", "-translate-y-2");
+            }, 2500);
+        }
+
+        // Arrancar aplicación
+        window.addEventListener("DOMContentLoaded", () => {
+            cargarDatosGuardados();
+            renderizarTarjetasMeses();
+            recalcularTodo();
+        });
+    </script>
+</body>
+</html>
